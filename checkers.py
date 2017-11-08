@@ -1,5 +1,9 @@
 import numpy as np
+import gmpy2
 from termcolor import colored, cprint
+
+def count_bits(bitboard):
+    return gmpy2.popcount(gmpy2.mpz(int(bitboard)))
 
 class Bitboard:
     # All even row squares can move to the left and all odd row squares
@@ -16,17 +20,20 @@ class Bitboard:
 
     BLACK, WHITE = 0, 1
 
-    def __init__(self, preset=None):
-        if preset:
-            self.black = np.uint32(preset['black'])
-            self.white = np.uint32(preset['white'])
-            self.kings = np.uint32(preset['kings'])
-            self.side = preset['side']
+    def __init__(self, state=None):
+        if state:
+            self.black = np.uint32(state[0])
+            self.white = np.uint32(state[1])
+            self.kings = np.uint32(state[2])
+            self.side = state[3]
         else:
             self.black = np.uint32(2**12-1)
             self.white = np.uint32(2**32 - 2**20)
             self.kings = np.uint32(0)
             self.side = self.BLACK
+
+    def get_state(self):
+        return (self.black, self.white, self.kings, self.side) 
 
     def get_moves(self):
         # Construct list of moves, where each move is a bitboard
@@ -346,12 +353,14 @@ class Bitboard:
         self.kings |= self.black & 0xf0000000
         self.kings |= self.white & 0x0000000f
 
-        self.side = ~self.side
+        self.side = not self.side
+        return self
 
     def print_board(self, board=None):
         hchar = '-'
         vchar = '||'
         hline = hchar * 7 * 8 + hchar * 4
+        print()
         cprint(hline, 'blue', 'on_blue')
         for row in range(8):
             for cellrow in range(3):
@@ -364,19 +373,22 @@ class Bitboard:
                         mask = 1 << (square)
                         if self.black & mask:
                             piece = 'B'
+                            color = 'red'
                         elif self.white & mask:
                             piece = 'W'
+                            color = 'white'
                         else:
                             piece = ''
+                            color = 'grey'
                         if piece and (self.kings & mask):
-                            piece = '<' + piece + '>'
+                            piece = '{' + piece + '}'
 
                         if cellrow == 0:
-                            print('{:>7}'.format(square), end='')
+                            cprint('{:>7}'.format(square), 'green', 'on_grey', end='')
                         if cellrow == 1:
-                            print('{:^7}'.format(piece), end='')
+                            cprint('{:^7}'.format(piece), color, 'on_grey', end='')
                         if cellrow == 2:
-                            print('{:^7}'.format(''), end='')
+                            cprint('{:^7}'.format(''), 'grey', 'on_grey', end='')
                     else:
                         if cellrow == 0:
                             cprint('{:#^7}'.format(''), 'yellow', 'on_yellow', end='')
@@ -386,62 +398,5 @@ class Bitboard:
                             cprint('{:#^7}'.format(''), 'yellow', 'on_yellow', end='')
                 cprint(vchar, 'blue', 'on_blue')
         cprint(hline, 'blue', 'on_blue')
-
-class Game:
-    def __init__(self):
-        modes = ['Player vs Player', 'Player vs Computer', 'Computer vs Computer']
-        #  mode = self.prompt('Welcome to checkers! Enter a number to continue.', modes)
-        #  self.board = Bitboard()
-        rows = []
-        for row in range(8):
-            rows.append((2**((row+1)*4)-1) - (2**(row*4)-1))
-        test_board = {
-            'black': rows[3],
-            'white': rows[4] + rows[6],
-            'kings': 0,
-            'side': Bitboard.BLACK
-        }
-        self.board = Bitboard(preset=test_board)
-        print('New game starting...')
-
-        side_names = ['BLACK', 'WHITE']
-        while(True):
-            self.board.print_board()
-            moves = self.board.get_moves()
-            if moves:
-                move = self.prompt('{}\'s turn, select a move'.format(side_names[self.board.side]),
-                        [self.board.format_move(m) for m in moves])
-                self.board.make_move(moves[move])
-            else:
-                self.prompt('{} wins.'.format(side_names[~self.board.side]),
-                        ['Play another game', 'Exit'])
-
-
-    def prompt(self, message, options):
-        while True:
-            try:
-                selection = int(input(message + '\n'
-                + '\n'.join(['  {!s:>2}.) {}'.format(i, o) for i, o in enumerate(options)]) + '\n'
-                + '--> '))
-            except ValueError:
-                continue
-            if 0 <= selection < len(options):
-                return selection
-            else:
-                continue
-
-game = Game()
-#  rows = []
-#  for row in range(8):
-    #  rows.append((2**((row+1)*4)-1) - (2**(row*4)-1))
-#  test_board = {
-    #  'black': 2**8,
-    #  'white': rows[3] + rows[5] + 2**24 + 2**25 + 2**5,
-    #  'kings': 2**8 + 2**13,
-    #  'side': Bitboard.BLACK
-#  }
-#  board = Bitboard(preset=test_board)
-#  board.print_board()
-#  board.get_moves()
-#  board.print_moves()
+        print()
 
