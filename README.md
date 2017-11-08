@@ -57,7 +57,36 @@ This class implements all move and jump validity detection, using bitwise operat
 One Bitboard() is kept to represent the actual game, while copies are created from the state 4-tuple in the AI to search the game tree.
 
 ### AI
-#### Searching
-#### Evaluation
+ai.py implements the AI() class.
 
-### AI
+#### Searching
+AI() uses an simple iterative deepening depth first search with alpha-beta pruned minimax.
+On every AI turn, the IDDFS is run on the current board state. A SIGALRM signal is used to break out of the recursion at the specified time limit. Otherwise, the IDDFS runs until any of the following conditions are met, increasing 1 ply on each iteration:
+1. The last deepening step takes more than half the allotted time.
+2. Only one possible move can be made.
+3. The entire game tree is examined. This is detected by checking whether any recursive step returns due to reaching the depth limit while moves still exist. If this occurs, then continue the iteration.
+
+Move reordering is implemented. At each depth limit for the IDDFS, the moves are returned and sorted descending based on the calculated minimax values. The next iteration then uses this sorted move list instead of the original.
+
+Otherwise, the alpha-beta pruning and minimax search are implemented canonically.
+
+#### Evaluation
+The minimax evaluation heuristic takes place in two stages.
+##### Early-midgame
+Most of the game takes place in this phase.
+The heuristic is simply a linear combinations of several factors:
+  * Material (piece total advantage)
+  * Trade value (if a side has a material advantage, trading pieces is encouraged)
+  * Advancement (pieces on enemy's side of the board)
+  * Center control (kings in the center of the board)
+  * King defense (pieces blocking the back rank)
+  * Turn (active side gets a small advantage)
+  
+##### Endgame
+Endgame is defined as when there are no longer any pawns on the board, and there are 5 or fewer pieces
+The following factors are considered
+  * Material
+  * Trade value
+  * Turns
+  * Distance (advantaged side attempts to move towards the opponent)
+  * Cornered kings (attempted to evict enemy kings from double corners)
