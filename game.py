@@ -24,7 +24,7 @@ class Game:
             side = self.prompt('Specify starting side: ', ['BLACK', 'WHITE'])
             twokings = (2**0, 2**9 + 2**13, 2**0 + 2**9 + 2**13, 1)
             draw = (2**12, 2**21, 2**12 + 2**21, 1)
-            self.board = Bitboard((black, white, kings & white & black, side))
+            self.board = Bitboard((black, white, kings & (white | black), side))
         else:
             self.board = Bitboard()
 
@@ -62,7 +62,7 @@ class Game:
     def ai_move(self):
         print('Finding best move for {}...'.format(self.side_names[self.board.side]))
         start = time.time()
-        move = self.ai.ids(self.board)
+        move = self.ai.iddfs(self.board)
         elapsed = time.time() - start
         print('  {} selected move {} in {:.3f}s'.format(self.side_names[self.board.side], self.board.format_move(move), elapsed))
         self.board.make_move(move)

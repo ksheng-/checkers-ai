@@ -11,8 +11,8 @@ class AI:
     def timer(self, signum, frame):
         raise Exception('IDSTimeout')
 
-    def ids(self, board):
-        # iterative deepening search
+    def iddfs(self, board):
+        # iterative deepening depth first search
         signal.signal(signal.SIGALRM, self.timer)
         signal.alarm(self.timelimit)
         self.start = time.time()
@@ -41,7 +41,7 @@ class AI:
 
                 score = self.evaluate(Bitboard(board.get_state()).make_move(move))
                 elapsed = time.time() - self.start
-                #  print('Depth {} : {}s elapsed, move {} selected, score = {}'.format(maxdepth, elapsed, board.format_move(move), score))
+                #  print('Depth {} : {}s elapsed, move {} selected, score = {}'.format(self.maxdepth, elapsed, board.format_move(move), score))
                 if elapsed > self.timelimit / 2:
                     break
                 self.maxdepth += 1    
@@ -131,37 +131,28 @@ class AI:
             # Favor trades when ahead in material. Max material on the board is 36
             exchange = (37 - material_black - material_white)
             score += (material_black - material_white) * exchange * 5
-
+            
             # Advancement
-            score += (board.black & 0xfffff000 - board.white & 0x000fffff) * 10
+            score += (count_bits(board.black & 0xfffff000) - count_bits(board.white & 0x000fffff)) * 20 
 
             # Central kings
-            score += (board.black & board.kings & 0x00666600 - board.white & board.kings & 0x00666600) * 20
+            score += (count_bits(board.black & board.kings & 0x00666600) - count_bits(board.white & board.kings & 0x00666600)) * 20
             
             # King defense
             score += (count_bits(board.black & 0x0000000f) - count_bits(board.white & 0xf0000000)) * 10
             
-
         # Endgame, 5 kings or fewer
         else:
             king_advantage = count_bits(board.black) - count_bits(board.white)
-            exchange = 7.5 - count_bits(board.black) - count_bits(board.white)
-            score += king_advantage * exchange * 20
+            exchange = 6 - count_bits(board.black) - count_bits(board.white)
+            score += king_advantage * exchange * 50
             
             #  Favor attacking with advantage in endgame
             score -= king_advantage * self.total_distance(board.black, board.white)
             
             score += (count_bits(board.black & 0x88000011) - count_bits(board.white & 0x88000011)) * 50
-            #  if self.side == board.BLACK:
-                #  # Attempt evict defensive enemy kings from corner
-                #  if king_advantage:
-                    #  score -= count_bits(board.white & 0x88000011) * 100
-            #  else:
-                
-                    #  score += count_bits(board.black & 0x88000011) * 100
         
         # Phase agnostic heuristics
-
         # Turn advantage
         if board.side == board.BLACK:
             score += 3
