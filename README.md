@@ -48,5 +48,16 @@ If it is an AI's turn, the AI will search for the best move within the time limi
 
 ## Implementation
 ### Game
+A checkers game class is implemented within checkers.py.
+
+This implementation uses a 4-tuple of integers to represent state: (black, white, kings, turn).
+Black, white, and kings are bitboards stored in numpy uint32s, while turn is an integer set to 0 if it is black's turn and 1 if it is white's turn.
+
+This class implements all move and jump validity detection, using bitwise operations in order to test each case.
+One Bitboard() is kept to represent the actual game, while copies are created from the state 4-tuple in the AI to search the game tree.
+
+### AI
+#### Searching
+#### Evaluation
 
 ### AI
